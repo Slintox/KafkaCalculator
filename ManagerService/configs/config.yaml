@@ -1,0 +1,14 @@
+# Manager config
+
+http:
+  host: "localhost"
+  port: ":8080"
+
+kafka:
+  brokers: "calculation_kafka:9092"
+  expressions:
+    topic: "expressions_topic"
+  calculations:
+    group_id: "mgr_01"
+    topic: "calculations_topic"
+    partition: 0

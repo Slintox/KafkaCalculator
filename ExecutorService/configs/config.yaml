@@ -1,0 +1,10 @@
+# Executor config
+
+kafka:
+  brokers: "calculation_kafka:9092"
+  expressions:
+    group_id: "exec_01"
+    topic: "expressions_topic"
+    partition: 0
+  calculations:
+    topic: "calculations_topic"

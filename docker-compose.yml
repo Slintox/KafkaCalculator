@@ -1,0 +1,130 @@
+version: '3.9'
+services:
+
+#  calculation_postgres:
+#    container_name: calculation_postgres
+#    image: postgres:14.2-alpine
+#    restart: on-failure
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: postgres
+#      POSTGRES_DB: calculator
+#    ports:
+#      - "5432:5432"
+#    networks:
+#      - calculator
+#    volumes:
+#      - G:\Volumes\calculator-postgres:/var/lib/postgresql/data
+
+  calculation_manager:
+    container_name: calculation_manager
+    image: calculation_manager
+    build:
+      context: ManagerService/
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ManagerService/.env
+    depends_on:
+#      - calculation_postgres
+      - calculation_kafka
+      - calculation_executor
+    volumes:
+      - E:\Projects\Learnings\KafkaCalculator\ManagerService\configs:/configs
+    networks:
+      - calculator
+
+  calculation_executor:
+    container_name: calculation_executor
+    image: calculation_executor
+    build:
+      context: ExecutorService/
+      dockerfile: Dockerfile
+    env_file:
+      - ExecutorService/.env
+    depends_on:
+      - calculation_kafka
+    volumes:
+      - E:\Projects\Learnings\KafkaCalculator\ExecutorService\configs:/configs
+    networks:
+      - calculator
+
+#  calculation_manager-debug:
+#    container_name: calculation_manager-debug
+#    image: calculation_manager-debug
+#    build:
+#      context: ManagerService/
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8080:8080"
+#      - "40001:40000"
+#    security_opt:
+#      - "apparmor=unconfined"
+#    env_file:
+#      - ManagerService/.env
+#    depends_on:
+#      #      - calculation_postgres
+#      - calculation_kafka
+#      - calculation_executor
+#    networks:
+#      - calculator
+
+#  calculation_executor-debug:
+#    container_name: calculation_executor-debug
+#    image: calculation_executor-debug
+#    build:
+#      context: ExecutorService/
+#      dockerfile: DockerfileDebug
+#    ports:
+#      - "40000:40000"
+#    security_opt:
+#      - "apparmor=unconfined"
+#    cap_add:
+#      - SYS_PTRACE
+#    env_file:
+#      - ExecutorService/.env
+#    depends_on:
+#      - calculation_kafka
+#    networks:
+#      - calculator
+
+  calculation_zookeeper:
+    container_name: calculation_zookeeper
+    image: bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - G:\Volumes\calculator-zookeeper:/bitnami/zookeeper
+    networks:
+      - calculator
+    restart: "no"
+
+  calculation_kafka:
+    container_name: calculation_kafka
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://calculation_kafka:9092
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=calculation_zookeeper:2181
+      - KAFKA_ALLOW_PLAINTEXT_LISTENER=yes
+    volumes:
+      - G:\Volumes\calculator-kafka:/bitnami/kafka
+    depends_on:
+      - calculation_zookeeper
+    networks:
+      - calculator
+    restart: "no"
+
+networks:
+  kafka-internal:
+    driver: bridge
+
+  calculator:
+    driver: bridge
